@@ -11,23 +11,42 @@ msigdb_handler <-  function(category,subcategory) {
   return(alist)
 }
 
-#H / C5 - " GO:BP " GO:CC " GO : MF "/ C6 / C7 - " IMMUNESIGDB " VAX "
-h = msigdb_handler("H", "")
-c5_go_bp = msigdb_handler("C5", "GO:BP")
-c5_go_cc = msigdb_handler("C5",  "GO:CC")
-c5_go_mf = msigdb_handler("C5", "GO:MF")
-c6 = msigdb_handler("C6", "")
-c7_immunesigdb = msigdb_handler("C7", "IMMUNESIGDB")
-c7_vax = msigdb_handler("C7", "VAX")
+#####################################################################################
 
-msigdb_gene_sets = c( "h" = h, "c5_go_bp" = c5_go_bp, "c5_go_cc" = c5_go_cc, "c5_go_mf" = c5_go_mf  , "c6" = c6,
-                      "c7_immunesigdb" = c7_immunesigdb, "c7_vax" = c7_vax)
+msigdb_collection.list = c("H","C1","C2","C3","C4","C5","C6","C7","C8") 
+m_list = list()
+main_list = list()
+for (i in msigdb_collection.list) {
+  print(i)
+  category = as.data.frame(msigdbr(species = "Homo sapiens",category = i)) %>% 
+    select(gs_cat, gs_subcat, gs_name, gene_symbol) 
+  subcategory = names(table(category$gs_subcat))
+  
+  if (length(subcategory) > 1) {
+    
+    for (s in subcategory) {
+      set_holder = filter(category, gs_subcat ==paste0(s)) %>% select(gs_name, gene_symbol)
+      
+      m_list[[paste0(s)]] = set_holder
+    }
+    main_list[[paste0(i)]] = m_list
+  } else {
+    set_holder =  category %>% select(gs_name, gene_symbol)
+    main_list[[paste0(i)]] = set_holder
+  }
+  
+  m_list = list()
+}
+
+saveRDS(main_list, file = "msigdb_collections.rds")
+readRDS(file = "msigdb_collections.rds")
 
 
-eg_1 = filter(msigdb_gene_sets$h.data, gs_name == "HALLMARK_ALLOGRAFT_REJECTION") %>% select(gene_symbol)
-eg_2 = filter(msigdb_gene_sets$c5_go_cc.data,gs_name == "GOCC_ACROSOMAL_VESICLE") %>% select(gene_symbol)
-eg_3 = filter(msigdb_gene_sets$c7_immunesigdb.data,gs_name == "GOLDRATH_NAIVE_VS_EFF_CD8_TCELL_DN") %>% select(gene_symbol)
+View(m[["C5"]][[""]])
+View(m[["H"]])
 
-saveRDS(msigdb_gene_sets, file("msigdb_gene_sets.rds"))
+names(m[["C2"]])
 
 
+gene_list = filter(m[["C5"]][["GO:BP"]],gs_name == "GOBP_ACTIN_FILAMENT_BASED_PROCESS" ) %>% select(gene_symbol)
+gene_list = filter(m[["H"]],gs_name == "HALLMARK_ADIPOGENESIS" ) %>% select(gene_symbol)
